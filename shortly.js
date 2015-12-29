@@ -27,8 +27,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
-    saveUninitialized: true,
-    cookie: {secure: true}
+    saveUninitialized: true
   }));
  
 
@@ -126,21 +125,18 @@ function(req, res) {
 /************************************************************/
 
 app.post('/signup', function(req,res){
-  console.log(req.body);
   var username = req.body.username;
   var password = req.body.password;
 
-  console.log("the username is "+username);
   // Use bookshelf to create a user and create a session
   new User({user: username}).fetch().then(function(found){
-    console.log("is this found "+found)
     if (found) {
       console.log('redirected!');
       res.redirect('/login');
     }
     else {
       // hashing stuff here
-      console.log("user does not exist yet")
+      console.log("user does not exist yet");
       var user = new User({
         user: username,
         password: password
@@ -149,16 +145,29 @@ app.post('/signup', function(req,res){
         Users.add(newUser);
         req.session.regenerate(function(err){
           if (err) console.log("error!!");
-          console.log("newUser string "+newUser);
           req.session.user = newUser;
           res.redirect('/');
         });
         
-        //create session (newUser)
-      })
-      //hashing stuff
+      });
     }
-  })
+  });
+});
+
+app.post('/login', function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({user: username, password: password}).fetch().then(function(userObj){
+    if (userObj) {
+      req.session.regenerate(function(err){
+        if (err) console.log("error!!");
+          req.session.user = userObj;
+          res.redirect('/');
+        });
+    } else {
+      res.redirect('/login');
+    }
+  });
 });
 
 
