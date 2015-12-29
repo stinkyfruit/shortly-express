@@ -42,8 +42,8 @@ app.use(session({
 app.get('/', 
 function(req, res) {
 
-  console.log("Session User: "+ Object.keys(req.session));
-  console.log("Session Error: "+req.session.error);
+  // console.log("Session User: "+ Object.keys(req.session));
+  // console.log("Session Error: "+req.session.error);
   if(req.session.user) {
     res.render('index');
   } else {
@@ -126,13 +126,41 @@ function(req, res) {
 /************************************************************/
 
 app.post('/signup', function(req,res){
-
+  console.log(req.body);
   var username = req.body.username;
   var password = req.body.password;
 
+  console.log("the username is "+username);
   // Use bookshelf to create a user and create a session
-
+  new User({user: username}).fetch().then(function(found){
+    console.log("is this found "+found)
+    if (found) {
+      console.log('redirected!');
+      res.redirect('/login');
+    }
+    else {
+      // hashing stuff here
+      console.log("user does not exist yet")
+      var user = new User({
+        user: username,
+        password: password
+      });
+      user.save().then(function(newUser){
+        Users.add(newUser);
+        req.session.regenerate(function(err){
+          if (err) console.log("error!!");
+          console.log("newUser string "+newUser);
+          req.session.user = newUser;
+          res.redirect('/');
+        });
+        
+        //create session (newUser)
+      })
+      //hashing stuff
+    }
+  })
 });
+
 
 
 /************************************************************/
