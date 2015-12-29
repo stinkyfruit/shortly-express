@@ -50,6 +50,14 @@ function(req, res) {
   }
 });
 
+app.get('/logout', function(req,res){
+//  if you click button you send a post request, and this button will say logout
+  req.session.destroy();
+  res.render('login');
+});
+
+
+
 app.get('/login',
 function(req,res){
   res.render('login');
