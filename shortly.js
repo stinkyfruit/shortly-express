@@ -18,9 +18,9 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
-// Parse JSON (uniform resource locators)
+
 app.use(bodyParser.json());
-// Parse forms (signup/login)
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
@@ -30,44 +30,35 @@ app.use(session({
     saveUninitialized: true
   }));
  
-
-//We need to start a session for our user
-// finding a way to add keys to our req.session object
-  // check if logged in
-    // if logged in we can send them to the right pages
-    // else sign up?
-  //
-
+//for get requests to homepage
 app.get('/', 
 function(req, res) {
-
-  // console.log("Session User: "+ Object.keys(req.session));
-  // console.log("Session Error: "+req.session.error);
-  if( util.isLoggedIn(req,res) ) {
+  if(util.isLoggedIn(req,res)) {
     res.render('index');
   } else {
     res.redirect('/login');
   }
 });
 
+//for get requests to logout page
 app.get('/logout', function(req,res){
-//  if  you click button you send a post request, and this button will say logout
   req.session.destroy();
   res.render('login');
 });
 
-
-
+//for get requests to login page
 app.get('/login',
 function(req,res){
   res.render('login');
 });
 
+//for get requests to signup page
 app.get('/signup',
 function(req, res) {
   res.render('signup');
 });
 
+//for get requests to create links page
 app.get('/create', 
 function(req, res) {
   if(req.session.user){
@@ -78,6 +69,7 @@ function(req, res) {
   }
 });
 
+//for get requests to links page
 app.get('/links', 
 function(req, res) {
 if (util.isLoggedIn(req)){
@@ -127,28 +119,28 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-
+//when user clicks signup button
 app.post('/signup', function(req,res){
   var username = req.body.username;
   var password = req.body.password;
 
   // Use bookshelf to create a user and create a session
   new User({user: username}).fetch().then(function(found){
-    if (found) {
-      console.log('redirected!');
+    if (found) { //if username exists
+      //redirect user to login page
       res.redirect('/login');
     }
-    else {
-      // hashing stuff here
-      console.log("user does not exist yet");
+    else { //if username does not exist
+      //this creates a user model
       var user = new User({
         user: username,
         password: password
       });
+      //this saves user model to database
       user.save().then(function(newUser){
         Users.add(newUser);
-        //users.createSession
-      util.createSession(req,res,newUser);
+        //regenerates session for new user
+        util.createSession(req,res,newUser);
         
       });
     }
@@ -158,22 +150,19 @@ app.post('/signup', function(req,res){
 app.post('/login', function(req, res){
   var username = req.body.username;
   var password = req.body.password;
+  //this is a query to the database to determine if this user 
+  // in combination with password exists
   new User({user: username, password: password}).fetch().then(function(userObj){
+    //if user and combination exist, regenerate session
     if (userObj) {
       util.createSession(req,res,userObj);
     } else {
+      //if not, redirect to login page
       res.redirect('/login');
     }
   });
 });
 
-
-
-/************************************************************/
-// Handle the wildcard route last - if all other routes fail
-// assume the route is a short code and try and handle it here.
-// If the short-code doesn't exist, send the user to '/'
-/************************************************************/
 
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
