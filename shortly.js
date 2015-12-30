@@ -43,7 +43,7 @@ function(req, res) {
 
   // console.log("Session User: "+ Object.keys(req.session));
   // console.log("Session Error: "+req.session.error);
-  if(req.session.user) {
+  if( util.isLoggedIn(req,res) ) {
     res.render('index');
   } else {
     res.redirect('/login');
@@ -51,7 +51,7 @@ function(req, res) {
 });
 
 app.get('/logout', function(req,res){
-//  if you click button you send a post request, and this button will say logout
+//  if  you click button you send a post request, and this button will say logout
   req.session.destroy();
   res.render('login');
 });
@@ -80,7 +80,7 @@ function(req, res) {
 
 app.get('/links', 
 function(req, res) {
-if (req.session.user){
+if (util.isLoggedIn(req)){
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });  
@@ -92,7 +92,6 @@ if (req.session.user){
 
 app.post('/links', 
 function(req, res) {
-  if(req.session.user) {
     var uri = req.body.url;
 
     if (!util.isValidUrl(uri)) {
@@ -123,9 +122,6 @@ function(req, res) {
         });
       }
     });
-  } else {
-  res.redirect('/login');
-  }
 });
 
 /************************************************************/
@@ -151,11 +147,8 @@ app.post('/signup', function(req,res){
       });
       user.save().then(function(newUser){
         Users.add(newUser);
-        req.session.regenerate(function(err){
-          if (err) console.log("error!!");
-          req.session.user = newUser;
-          res.redirect('/');
-        });
+        //users.createSession
+      util.createSession(req,res,newUser);
         
       });
     }
@@ -167,11 +160,7 @@ app.post('/login', function(req, res){
   var password = req.body.password;
   new User({user: username, password: password}).fetch().then(function(userObj){
     if (userObj) {
-      req.session.regenerate(function(err){
-        if (err) console.log("error!!");
-          req.session.user = userObj;
-          res.redirect('/');
-        });
+      util.createSession(req,res,userObj);
     } else {
       res.redirect('/login');
     }
